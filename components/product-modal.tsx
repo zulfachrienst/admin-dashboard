@@ -17,6 +17,39 @@ import {
 import { Loader2 } from "lucide-react"
 
 
+interface Spec {
+  key: string
+  value: string
+}
+
+interface Discount {
+  percent?: number
+  priceAfterDiscount?: number
+}
+
+interface VariantOption {
+  value: string
+  images: string[]
+  price?: number
+  stock?: number
+  sku?: string
+  discount?: Discount
+  specs: Spec[]
+  useDefault?: {
+    price?: boolean
+    stock?: boolean
+    sku?: boolean
+    discount?: boolean
+    specs?: boolean
+    // tambahkan field lain jika perlu
+  }
+}
+
+interface Variant {
+  name: string
+  options: VariantOption[]
+}
+
 interface Product {
   id?: string
   name: string
@@ -27,14 +60,15 @@ interface Product {
   brand: string
   features: string[]
   images: string[]
-  discount?: { percent: number; priceAfterDiscount: number }
-  specs?: { key: string; value: string }[]
-  variants?: { name: string; options: (string | { value: string; images?: string[] })[] }[]
+  discount?: Discount
+  specs?: Spec[]
+  variants?: Variant[]
   tags?: string[]
   rating?: { average: number; count: number }
   status?: string
   isFeatured?: boolean
   warehouseLocation?: string
+  sku?: string
   createdAt?: any
   updatedAt?: any
 }
@@ -68,8 +102,8 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
   const [categoryText, setCategoryText] = useState("")
   const [featuresText, setFeaturesText] = useState("")
   const [tagsText, setTagsText] = useState("")
-  const [specs, setSpecs] = useState<{ key: string; value: string }[]>([])
-  const [variants, setVariants] = useState<{ name: string; options: (string | { value: string; images?: string[] })[] }[]>([])
+  const [specs, setSpecs] = useState<Spec[]>([])
+  const [variants, setVariants] = useState<Variant[]>([])
   const [variantName, setVariantName] = useState("")
   const [variantOptions, setVariantOptions] = useState("")
   const [selectedImages, setSelectedImages] = useState<File[]>([])
@@ -129,7 +163,21 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
       setFeaturesText((product.features || []).join(", "))
       setTagsText((product.tags || []).join(", "))
       setSpecs(product.specs || [])
-      setVariants(product.variants || [])
+      setVariants(
+        (product.variants || []).map(variant => ({
+          ...variant,
+          options: (variant.options || []).map(opt => ({
+            ...opt,
+            useDefault: {
+              price: opt.useDefault?.price ?? true,
+              stock: opt.useDefault?.stock ?? true,
+              sku: opt.useDefault?.sku ?? true,
+              discount: opt.useDefault?.discount ?? true,
+              specs: opt.useDefault?.specs ?? true,
+            }
+          }))
+        }))
+      )
       setDiscountPercent(product.discount?.percent || 0)
       setPriceAfterDiscount(product.discount?.priceAfterDiscount || product.price)
       setRatingAverage(product.rating?.average || 0)
@@ -225,7 +273,14 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
             quality: 0.8,
             maxWidth: 1200,
             maxHeight: 1200,
-            success: resolve,
+            success: (result: File | Blob) => {
+              if (result instanceof File) {
+                resolve(result)
+              } else {
+                // Convert Blob to File
+                resolve(new File([result], file.name, { type: result.type }))
+              }
+            },
             error: reject,
           })
         })
@@ -242,7 +297,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
     setExistingImages((prev) => prev.filter((_, i) => i !== index))
   }
   const removeNewImage = (index: number) => {
-    setSelectedImages((prev) => prev.filter((_, i) => i !== index))
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index)) // Hapus dari selectedImages
     setNewImagePreviews((prev) => {
       const url = prev[index]
       if (url?.startsWith("blob:")) {
@@ -255,6 +310,18 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
       mainImageInputRef.current.value = ""
     }
   }
+
+
+  // Ensure removed images are not uploaded
+  useEffect(() => {
+    // Sync selectedImages and newImagePreviews length
+    if (selectedImages.length !== newImagePreviews.length) {
+      // If mismatch, trim selectedImages to match newImagePreviews
+      setSelectedImages((prev) => prev.slice(0, newImagePreviews.length))
+    }
+  }, [newImagePreviews])
+
+  // Cleanup function for object URLs
   useEffect(() => {
     return () => {
       newImagePreviews.forEach((url) => {
@@ -298,7 +365,14 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
             quality: 0.8,
             maxWidth: 1200,
             maxHeight: 1200,
-            success: resolve,
+            success: (result: File | Blob) => {
+              if (result instanceof File) {
+                resolve(result)
+              } else {
+                // Convert Blob to File
+                resolve(new File([result], file.name, { type: result.type }))
+              }
+            },
             error: reject,
           })
         })
@@ -319,26 +393,48 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
   }
 
   const removeVariantOptionImage = (vIdx: number, oIdx: number, imgIdx: number) => {
-    const key = `${vIdx}_${oIdx}`
-    setVariantOptionImages((prev) => ({
-      ...prev,
-      [key]: (prev[key] || []).filter((_, i) => i !== imgIdx),
-    }))
+    const key = `${vIdx}_${oIdx}`;
     setVariantOptionPreviews((prev) => {
-      const urls = prev[key] || []
-      if (urls[imgIdx]?.startsWith("blob:")) {
-        URL.revokeObjectURL(urls[imgIdx])
+      const urls = prev[key] || [];
+      const url = urls[imgIdx];
+      if (url?.startsWith("blob:")) {
+        // Hapus file pada index yang sama di variantOptionImages
+        setVariantOptionImages((prevFiles) => {
+          const files = prevFiles[key] || [];
+          // Hapus file pada posisi imgIdx, hanya jika jumlah files sama dengan jumlah blob di previews
+          // Hitung index file yang sesuai dengan imgIdx pada previews yang blob
+          let blobIdx = -1;
+          for (let i = 0, b = 0; i < urls.length; i++) {
+            if (urls[i].startsWith("blob:")) {
+              if (i === imgIdx) {
+                blobIdx = b;
+                break;
+              }
+              b++;
+            }
+          }
+          if (blobIdx !== -1) {
+            return {
+              ...prevFiles,
+              [key]: files.filter((_, i) => i !== blobIdx),
+            };
+          }
+          return prevFiles;
+        });
+        URL.revokeObjectURL(url);
       }
       return {
         ...prev,
         [key]: urls.filter((_, i) => i !== imgIdx),
-      }
-    })
+      };
+    });
     // Reset input file agar bisa pilih file yang sama lagi
     if (variantImageInputRefs[key]?.current) {
-      variantImageInputRefs[key].current.value = ""
+      variantImageInputRefs[key].current.value = "";
     }
-  }
+  };
+
+
 
   // Remove backend variant image (for preview only)
   const removeBackendVariantImage = (vIdx: number, oIdx: number, url: string) => {
@@ -379,18 +475,69 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
 
   // Variants
   const addVariant = () => {
-    if (!variantName || !variantOptions) return
+    if (!variantName) return
+    const optionValues = variantOptions
+      .split(",")
+      .map(o => o.trim())
+      .filter(Boolean)
     setVariants([
       ...variants,
       {
         name: variantName,
-        options: variantOptions.split(",").map(o => o.trim()).filter(Boolean)
+        options: optionValues.map(optionValue => ({
+          value: optionValue,
+          images: [],
+          price: undefined,
+          stock: undefined,
+          sku: "",
+          discount: { percent: undefined, priceAfterDiscount: undefined },
+          specs: [],
+          useDefault: {
+            price: true,
+            stock: true,
+            sku: false,
+            discount: true,
+            specs: true,
+          }
+        })),
       }
     ])
     setVariantName("")
     setVariantOptions("")
   }
   const removeVariant = (idx: number) => setVariants(variants.filter((_, i) => i !== idx))
+
+  // Tambahkan fungsi untuk menambah option pada variant
+  const addVariantOption = (vIdx: number, value: string) => {
+    setVariants(variants =>
+      variants.map((variant, i) =>
+        i === vIdx
+          ? {
+            ...variant,
+            options: [
+              ...variant.options,
+              {
+                value,
+                images: [],
+                price: undefined,
+                stock: undefined,
+                sku: "",
+                discount: { percent: undefined, priceAfterDiscount: undefined },
+                specs: [],
+                useDefault: {
+                  price: true,
+                  stock: true,
+                  sku: true,
+                  discount: true,
+                  specs: true,
+                }
+              },
+            ],
+          }
+          : variant
+      )
+    )
+  }
 
   // Submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -402,19 +549,23 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
       const tagsArr = tagsText.split(",").map(t => t.trim()).filter(Boolean)
 
       // Siapkan variants tanpa blob url di images
-      const variantsWithImages = variants.map((variant, vIdx) => ({
+      const variantsFinal = variants.map((variant, vIdx) => ({
         ...variant,
         options: variant.options.map((option, oIdx) => {
-          // Hanya masukkan URL backend (bukan blob) ke images, atau kosongkan jika upload baru
-          let backendImages: string[] = []
-          if (typeof option === "object" && Array.isArray(option.images)) {
-            backendImages = option.images.filter(url => !url.startsWith("blob:"))
+          // Filter images: hanya url backend (bukan blob)
+          const backendImages = (option.images || []).filter(url => !url.startsWith("blob:"))
+          return {
+            ...option,
+            images: backendImages,
+            price: option.useDefault?.price ? formData.price : option.price,
+            stock: option.useDefault?.stock ? formData.stock : option.stock,
+            sku: option.useDefault?.sku ? (formData as any).sku : option.sku,
+            discount: option.useDefault?.discount ? { ...formData.discount } : option.discount,
+            specs: option.useDefault?.specs ? specs : option.specs,
           }
-          return typeof option === "string"
-            ? { value: option, images: backendImages }
-            : { ...option, images: backendImages }
         })
       }))
+
 
       const productData: Product = {
         ...formData,
@@ -422,10 +573,12 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
         features: featuresArr,
         tags: tagsArr,
         specs,
-        variants: variantsWithImages,
+        variants: variantsFinal,
         discount: { percent: discountPercent, priceAfterDiscount: priceAfterDiscount },
         rating: { average: ratingAverage, count: ratingCount },
-        images: [...existingImages, ...newImagePreviews],
+        // Penting: Jangan sertakan newImagePreviews di sini, karena ini akan dikirim sebagai File terpisah
+        // images: [...existingImages, ...newImagePreviews], // Hapus baris ini
+        images: existingImages, // Hanya sertakan existing images dari backend
         price: Number(formData.price),
         stock: Number(formData.stock),
         isFeatured: !!formData.isFeatured,
@@ -436,6 +589,7 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
         return
       }
       const formDataToSend = new FormData()
+      console.log(productData.variants)
       formDataToSend.append("data", JSON.stringify(productData))
       // Main images
       selectedImages.forEach((file) => {
@@ -447,6 +601,25 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
           formDataToSend.append(`variant_${key}_images`, file, file.name)
         })
       })
+
+      // --- PENTING: Revoke Object URLs sebelum submit ---
+      newImagePreviews.forEach(url => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+      Object.values(variantOptionPreviews).forEach(urls => {
+        urls.forEach(url => {
+          if (url.startsWith("blob:")) {
+            URL.revokeObjectURL(url);
+          }
+        });
+      });
+      // Setelah revoke, kosongkan state preview agar tidak ada referensi lagi
+      setNewImagePreviews([]);
+      setVariantOptionPreviews({});
+      // -------------------------------------------------
+
       await onSubmit(formDataToSend)
       onClose()
     } catch (error) {
@@ -455,6 +628,46 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
       setIsSubmitting(false)
     }
   }
+
+  useEffect(() => {
+    setVariants(variants =>
+      variants.map(variant => ({
+        ...variant,
+        options: (variant.options || []).map(opt => {
+          const base = typeof opt === "string"
+            ? {
+              value: opt,
+              images: [],
+              price: undefined,
+              stock: undefined,
+              sku: "",
+              discount: { percent: undefined, priceAfterDiscount: undefined },
+              specs: [],
+            }
+            : {
+              value: opt.value,
+              images: opt.images || [],
+              price: opt.price,
+              stock: opt.stock,
+              sku: opt.sku || "",
+              discount: opt.discount || { percent: undefined, priceAfterDiscount: undefined },
+              specs: opt.specs || [],
+            }
+          return {
+            ...base,
+            useDefault: {
+              price: opt.useDefault?.price ?? true,
+              stock: opt.useDefault?.stock ?? true,
+              sku: opt.useDefault?.sku ?? true,
+              discount: opt.useDefault?.discount ?? true,
+              specs: opt.useDefault?.specs ?? true,
+            }
+          }
+        }),
+      }))
+    )
+    // eslint-disable-next-line
+  }, [])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -559,7 +772,34 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
                 <div key={vIdx} className="mb-2 border rounded p-2">
                   <div className="flex gap-2 mb-1">
                     <Input placeholder="Name" value={variant.name} onChange={e => setVariants(variants.map((v, i) => i === vIdx ? { ...v, name: e.target.value } : v))} className="w-1/3" disabled={isSubmitting} />
-                    <Input placeholder="Options (comma separated)" value={variant.options.map(opt => typeof opt === "string" ? opt : opt.value).join(", ")} onChange={e => setVariants(variants.map((v, i) => i === vIdx ? { ...v, options: e.target.value.split(",").map(o => o.trim()).filter(Boolean) } : v))} className="w-1/2" disabled={isSubmitting} />
+                    <Input
+                      placeholder="Options (comma separated)"
+                      value={variant.options.map(opt => typeof opt === "string" ? opt : opt.value).join(", ")}
+                      onChange={e =>
+                        setVariants(variants.map((v, i) =>
+                          i === vIdx
+                            ? {
+                              ...v,
+                              options: e.target.value
+                                .split(",")
+                                .map(o => o.trim())
+                                .filter(Boolean)
+                                .map(optionValue => ({
+                                  value: optionValue,
+                                  images: [],
+                                  price: undefined,
+                                  stock: undefined,
+                                  sku: "",
+                                  discount: { percent: undefined, priceAfterDiscount: undefined },
+                                  specs: [],
+                                })),
+                            }
+                            : v
+                        ))
+                      }
+                      className="w-1/2"
+                      disabled={isSubmitting}
+                    />
                     <Button type="button" variant="outline" onClick={() => removeVariant(vIdx)} disabled={isSubmitting}>Remove</Button>
                   </div>
                   {/* Untuk setiap option, tampilkan input file & preview */}
@@ -572,57 +812,538 @@ export function ProductModal({ isOpen, onClose, onSubmit, product }: ProductModa
                       ...backendImages.filter(img => !(variantOptionPreviews[key] || []).includes(img))
                     ]
                     return (
-                      <div key={oIdx} className="mb-2 ml-4 w-full h-full">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Label className="w-24">{labelText}</Label>
+                      <div key={oIdx} className="mb-4 ml-4 border rounded p-2 bg-gray-50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Label className="w-24">Value</Label>
                           <Input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={e => handleVariantOptionImageSelect(vIdx, oIdx, e)}
-                            disabled={isSubmitting}
-                            className="w-1/2"
-                            ref={variantImageInputRefs[key]}
-                          />
-                        </div>
-                        {allPreviews.length > 0 && (
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                            {allPreviews.map((url, imgIdx) => {
-                              const isUploaded = url.startsWith("blob:")
-                              const isBackend = !isUploaded
-                              return (
-                                <div key={imgIdx} className="relative group">
-                                  {/* Label overlay */}
-                                  <span className="absolute bottom-1 left-1 z-10 bg-black/70 text-white text-xs px-2 py-0.5 rounded shadow">
-                                    {variant.name} - {labelText}
-                                  </span>
-                                  <img
-                                    src={url}
-                                    alt={`Variant ${variant.name} ${labelText} ${imgIdx + 1}`}
-                                    className="w-full h-24 object-cover rounded border border-gray-300 shadow-sm"
-                                    style={{ background: "#f3f4f6" }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (isUploaded) {
-                                        removeVariantOptionImage(vIdx, oIdx, imgIdx)
-                                      } else {
-                                        removeBackendVariantImage(vIdx, oIdx, url)
-                                      }
-                                    }}
-                                    className={`absolute top-1 right-1 opacity-80 group-hover:opacity-100 transition bg-white border ${isBackend ? "border-red-500 text-red-600 hover:bg-red-500 hover:text-white" : "border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white"} rounded-full w-6 h-6 flex items-center justify-center text-base font-bold shadow`}
-                                    disabled={isSubmitting}
-                                    title="Remove image"
-                                  >×</button>
-                                </div>
+                            value={option.value}
+                            onChange={e =>
+                              setVariants(variants =>
+                                variants.map((v, vi) =>
+                                  vi === vIdx
+                                    ? {
+                                      ...v,
+                                      options: v.options.map((opt, oi) =>
+                                        oi === oIdx ? { ...opt, value: e.target.value } : opt
+                                      ),
+                                    }
+                                    : v
+                                )
                               )
-                            })}
+                            }
+                            className="w-1/2"
+                            disabled={isSubmitting}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              setVariants(variants =>
+                                variants.map((v, vi) =>
+                                  vi === vIdx
+                                    ? { ...v, options: v.options.filter((_, oi) => oi !== oIdx) }
+                                    : v
+                                )
+                              )
+                            }
+                            disabled={isSubmitting}
+                          >
+                            Remove Option
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div>
+                            <Label>Price</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={
+                                  option.useDefault?.price
+                                    ? (formData.price !== undefined ? formData.price : "") // fallback ke "" jika undefined
+                                    : (option.price !== undefined ? option.price : "")
+                                }
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? { ...opt, price: e.target.value ? Number(e.target.value) : undefined }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                disabled={isSubmitting || option.useDefault?.price}
+                              />
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={option.useDefault?.price ?? true}
+                                  onChange={e =>
+                                    setVariants(variants =>
+                                      variants.map((v, vi) =>
+                                        vi === vIdx
+                                          ? {
+                                            ...v,
+                                            options: v.options.map((opt, oi) =>
+                                              oi === oIdx
+                                                ? { ...opt, useDefault: { ...opt.useDefault, price: e.target.checked } }
+                                                : opt
+                                            ),
+                                          }
+                                          : v
+                                      )
+                                    )
+                                  }
+                                  disabled={isSubmitting}
+                                />
+                                <span className="text-xs">Samakan dengan data produk</span>
+                              </label>
+                            </div>
                           </div>
-                        )}
+                          <div>
+                            <Label>Stock</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={
+                                  option.useDefault?.stock
+                                    ? (formData.stock !== undefined ? formData.stock : "") // fallback ke "" jika undefined
+                                    : (option.stock !== undefined ? option.stock : "")
+                                }
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? { ...opt, stock: e.target.value ? Number(e.target.value) : undefined }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                disabled={isSubmitting || option.useDefault?.stock}
+                              />
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={option.useDefault?.stock ?? true}
+                                  onChange={e =>
+                                    setVariants(variants =>
+                                      variants.map((v, vi) =>
+                                        vi === vIdx
+                                          ? {
+                                            ...v,
+                                            options: v.options.map((opt, oi) =>
+                                              oi === oIdx
+                                                ? { ...opt, useDefault: { ...opt.useDefault, stock: e.target.checked } }
+                                                : opt
+                                            ),
+                                          }
+                                          : v
+                                      )
+                                    )
+                                  }
+                                  disabled={isSubmitting}
+                                />
+                                <span className="text-xs">Samakan dengan data produk</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>SKU</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={
+                                  option.useDefault?.sku
+                                    ? formData.sku || "" // ambil dari produk utama
+                                    : option.sku || ""
+                                }
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? { ...opt, sku: e.target.value }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                disabled={isSubmitting || option.useDefault?.sku}
+                              />
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={option.useDefault?.sku ?? true}
+                                  onChange={e =>
+                                    setVariants(variants =>
+                                      variants.map((v, vi) =>
+                                        vi === vIdx
+                                          ? {
+                                            ...v,
+                                            options: v.options.map((opt, oi) =>
+                                              oi === oIdx
+                                                ? { ...opt, useDefault: { ...opt.useDefault, sku: e.target.checked } }
+                                                : opt
+                                            ),
+                                          }
+                                          : v
+                                      )
+                                    )
+                                  }
+                                  disabled={isSubmitting}
+                                />
+                                <span className="text-xs">Samakan dengan data produk</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Discount (%)</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={
+                                  option.useDefault?.discount
+                                    ? (formData.discount?.percent !== undefined ? formData.discount.percent : "")
+                                    : (option.discount?.percent !== undefined ? option.discount.percent : "")
+                                }
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? {
+                                                ...opt,
+                                                discount: {
+                                                  ...opt.discount,
+                                                  percent: e.target.value ? Number(e.target.value) : undefined,
+                                                  priceAfterDiscount:
+                                                    (opt.price ?? formData.price) && e.target.value
+                                                      ? (opt.price ?? formData.price) - ((opt.price ?? formData.price) * Number(e.target.value)) / 100
+                                                      : undefined,
+                                                },
+                                              }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                disabled={isSubmitting || option.useDefault?.discount}
+                              />
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={option.useDefault?.discount ?? true}
+                                  onChange={e =>
+                                    setVariants(variants =>
+                                      variants.map((v, vi) =>
+                                        vi === vIdx
+                                          ? {
+                                            ...v,
+                                            options: v.options.map((opt, oi) =>
+                                              oi === oIdx
+                                                ? { ...opt, useDefault: { ...opt.useDefault, discount: e.target.checked } }
+                                                : opt
+                                            ),
+                                          }
+                                          : v
+                                      )
+                                    )
+                                  }
+                                  disabled={isSubmitting}
+                                />
+                                <span className="text-xs">Samakan dengan data produk</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Price After Discount</Label>
+                            <Input
+                              type="number"
+                              value={
+                                option.useDefault?.discount
+                                  ? (formData.discount?.priceAfterDiscount ?? "")
+                                  : (option.discount?.priceAfterDiscount ?? "")
+                              }
+                              onChange={e =>
+                                setVariants(variants =>
+                                  variants.map((v, vi) =>
+                                    vi === vIdx
+                                      ? {
+                                        ...v,
+                                        options: v.options.map((opt, oi) =>
+                                          oi === oIdx
+                                            ? {
+                                              ...opt,
+                                              discount: {
+                                                ...opt.discount,
+                                                priceAfterDiscount: e.target.value ? Number(e.target.value) : undefined,
+                                              },
+                                            }
+                                            : opt
+                                        ),
+                                      }
+                                      : v
+                                  )
+                                )
+                              }
+                              disabled={isSubmitting || option.useDefault?.discount}
+                            />
+                          </div>
+                        </div>
+                        {/* Specs */}
+                        <div className="mb-2">
+                          <Label>Specs</Label>
+                          <div className="flex items-center gap-2 mb-2">
+                            <label className="flex items-center gap-1">
+                              <input
+                                type="checkbox"
+                                checked={option.useDefault?.specs ?? true}
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? { ...opt, useDefault: { ...opt.useDefault, specs: e.target.checked } }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                disabled={isSubmitting}
+                              />
+                              <span className="text-xs">Samakan dengan data produk</span>
+                            </label>
+                          </div>
+                          {(option.useDefault?.specs ? (specs ?? []) : (option.specs ?? [])).map((spec, sIdx) => (
+                            <div key={sIdx} className="flex gap-2 mb-1">
+                              <Input
+                                placeholder="Key"
+                                value={spec.key}
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? {
+                                                ...opt,
+                                                specs: opt.specs.map((sp, spi) =>
+                                                  spi === sIdx ? { ...sp, key: e.target.value } : sp
+                                                ),
+                                              }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                className="w-1/3"
+                                disabled={isSubmitting || option.useDefault?.specs}
+                              />
+                              <Input
+                                placeholder="Value"
+                                value={spec.value}
+                                onChange={e =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? {
+                                                ...opt,
+                                                specs: opt.specs.map((sp, spi) =>
+                                                  spi === sIdx ? { ...sp, value: e.target.value } : sp
+                                                ),
+                                              }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                className="w-1/2"
+                                disabled={isSubmitting || option.useDefault?.specs}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() =>
+                                  setVariants(variants =>
+                                    variants.map((v, vi) =>
+                                      vi === vIdx
+                                        ? {
+                                          ...v,
+                                          options: v.options.map((opt, oi) =>
+                                            oi === oIdx
+                                              ? {
+                                                ...opt,
+                                                specs: opt.specs.filter((_, spi) => spi !== sIdx),
+                                              }
+                                              : opt
+                                          ),
+                                        }
+                                        : v
+                                    )
+                                  )
+                                }
+                                disabled={isSubmitting || option.useDefault?.specs}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              setVariants(variants =>
+                                variants.map((v, vi) =>
+                                  vi === vIdx
+                                    ? {
+                                      ...v,
+                                      options: v.options.map((opt, oi) =>
+                                        oi === oIdx
+                                          ? {
+                                            ...opt,
+                                            specs: [...(opt.specs || []), { key: "", value: "" }],
+                                          }
+                                          : opt
+                                      ),
+                                    }
+                                    : v
+                                )
+                              )
+                            }
+                            disabled={isSubmitting || option.useDefault?.specs}
+                          >
+                            Add Spec
+                          </Button>
+                        </div>
+                        <div className="flex gap-2 items-center flex-wrap">
+                          {/* Preview gambar */}
+                          {allPreviews.map((url, imgIdx) => {
+                            const isUploaded = url.startsWith("blob:")
+                            const isBackend = !isUploaded
+                            return (
+                              <div key={imgIdx} className="relative group w-24 h-24">
+                                {/* Label overlay */}
+                                <span className="absolute bottom-1 left-1 z-10 bg-black/70 text-white text-xs px-2 py-0.5 rounded shadow">
+                                  {variant.name} - {labelText}
+                                </span>
+                                <img
+                                  src={url}
+                                  alt={`Variant ${variant.name} ${labelText} ${imgIdx + 1}`}
+                                  className="w-full h-full object-cover rounded border border-gray-300 shadow-sm"
+                                  style={{ background: "#f3f4f6" }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isUploaded) {
+                                      removeVariantOptionImage(vIdx, oIdx, imgIdx)
+                                    } else {
+                                      removeBackendVariantImage(vIdx, oIdx, url)
+                                    }
+                                  }}
+                                  className={`absolute top-1 right-1 opacity-80 group-hover:opacity-100 transition bg-white border ${isBackend ? "border-red-500 text-red-600 hover:bg-red-500 hover:text-white" : "border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white"} rounded-full w-6 h-6 flex items-center justify-center text-base font-bold shadow`}
+                                  disabled={isSubmitting}
+                                  title="Remove image"
+                                >×</button>
+                              </div>
+                            )
+                          })}
+                          {/* Tombol Add Images selalu tampil, di awal jika belum ada gambar */}
+                          {(allPreviews.length < MAX_VARIANT_IMAGES) && (
+                            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded bg-gray-50 hover:bg-gray-100">
+                              <span className="text-3xl text-gray-400">+</span>
+                              <span className="text-xs text-gray-500">Add Images</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={e => handleVariantOptionImageSelect(vIdx, oIdx, e)}
+                                disabled={isSubmitting}
+                                ref={variantImageInputRefs[key]}
+                              />
+                            </label>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
+                  <div className="flex justify-end mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        setVariants(variants =>
+                          variants.map((v, vi) =>
+                            vi === vIdx
+                              ? {
+                                ...v,
+                                options: [
+                                  ...v.options,
+                                  {
+                                    value: "",
+                                    images: [],
+                                    price: undefined,
+                                    stock: undefined,
+                                    sku: "",
+                                    discount: { percent: undefined, priceAfterDiscount: undefined },
+                                    specs: [],
+                                    useDefault: {
+                                      price: true,
+                                      stock: true,
+                                      sku: true,
+                                      discount: true,
+                                      specs: true,
+                                    }
+                                  }
+                                ]
+                              }
+                              : v
+                          )
+                        )
+                      }
+                      disabled={isSubmitting}
+                    >
+                      Tambah Opsi
+                    </Button>
+                  </div>
                 </div>
               ))}
               <div className="flex gap-2 mt-1">

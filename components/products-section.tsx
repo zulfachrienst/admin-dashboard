@@ -80,6 +80,11 @@ export function ProductsSection() {
 
   const { apiCall } = useApi()
 
+        const apiBaseUrl =
+        process.env.NODE_ENV === "development"
+          ? "http://localhost:3001"
+          : "https://chatbot-rag-9yyy.onrender.com"
+
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -165,7 +170,7 @@ export function ProductsSection() {
           warehouseLocation: productData.warehouseLocation || ''
         }
 
-        await apiCall("https://chatbot-rag-9yyy.onrender.com/api/products", {
+        await apiCall(`${apiBaseUrl}/api/products`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -190,7 +195,7 @@ export function ProductsSection() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const response = await fetch("https://chatbot-rag-9yyy.onrender.com/api/products")
+      const response = await fetch(`${apiBaseUrl}/api/products`)
       const data: ApiResponse = await response.json()
 
       if (data.success) {
@@ -284,7 +289,7 @@ export function ProductsSection() {
         }
       }
 
-      const response = await apiCall("https://chatbot-rag-9yyy.onrender.com/api/products", {
+      const response = await apiCall(`${apiBaseUrl}/api/products`, {
         method: "POST",
         body: formData, // Send FormData directly
       })
@@ -323,7 +328,7 @@ export function ProductsSection() {
         }
       }
 
-      const response = await apiCall(`https://chatbot-rag-9yyy.onrender.com/api/products/${editingProduct.id}`, {
+      const response = await apiCall(`${apiBaseUrl}/api/products/${editingProduct.id}`, {
         method: "PUT",
         body: formData, // Send FormData directly
       })
@@ -351,7 +356,7 @@ export function ProductsSection() {
 
     try {
       setLoading(true)
-      const response = await apiCall(`https://chatbot-rag-9yyy.onrender.com/api/products/${id}`, {
+      const response = await apiCall(`${apiBaseUrl}/api/products/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -50,32 +50,37 @@ interface ServiceConfig {
   description: string
 }
 
+const apiBaseUrl =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3001"
+    : "https://chatbot-rag-9yyy.onrender.com"
+
 const services: ServiceConfig[] = [
   {
     name: "Firebase Database",
     key: "firebase",
-    endpoint: "https://chatbot-rag-9yyy.onrender.com/api/health/test/firebase",
+    endpoint: `${apiBaseUrl}/api/health/test/firebase`,
     icon: Database,
     description: "Firestore Database Connection",
   },
   {
     name: "GROQ AI API",
     key: "groq",
-    endpoint: "https://chatbot-rag-9yyy.onrender.com/api/health/test/groq",
+    endpoint: `${apiBaseUrl}/api/health/test/groq`,
     icon: Zap,
     description: "AI Language Model Service",
   },
   {
     name: "Pinecone Vector DB",
     key: "pinecone",
-    endpoint: "https://chatbot-rag-9yyy.onrender.com/api/health/test/pinecone",
+    endpoint: `${apiBaseUrl}/api/health/test/pinecone`,
     icon: Database,
     description: "Vector Database for Embeddings",
   },
   {
     name: "HuggingFace Inference",
     key: "huggingface",
-    endpoint: "https://chatbot-rag-9yyy.onrender.com/api/health/test/huggingface",
+    endpoint: `${apiBaseUrl}/api/health/test/huggingface`,
     icon: Zap,
     description: "Sentence Embedding Service",
   },
@@ -93,7 +98,7 @@ export function HealthSection() {
   const fetchHealthStatus = async () => {
     try {
       setLoading(true)
-      const response = await fetch("https://chatbot-rag-9yyy.onrender.com/api/health/status")
+      const response = await fetch(`${apiBaseUrl}/api/health/status`)
       const result: HealthStatusResponse = await response.json()
 
       if (result.success) {
@@ -113,7 +118,7 @@ export function HealthSection() {
   // Update individual service data tanpa refresh
   const updateServiceData = async (serviceKey: string) => {
     try {
-      const response = await fetch("https://chatbot-rag-9yyy.onrender.com/api/health/status")
+      const response = await fetch(`${apiBaseUrl}/api/health/status`)
       const result: HealthStatusResponse = await response.json()
 
       if (result.success && result.data[serviceKey]) {
@@ -410,9 +415,8 @@ export function HealthSection() {
               return (
                 <div
                   key={service.key}
-                  className={`flex items-center justify-between p-4 border rounded-lg transition-all duration-300 ${
-                    isCurrentlyTesting ? "border-blue-300 bg-blue-50" : ""
-                  }`}
+                  className={`flex items-center justify-between p-4 border rounded-lg transition-all duration-300 ${isCurrentlyTesting ? "border-blue-300 bg-blue-50" : ""
+                    }`}
                 >
                   <div className="flex items-center space-x-4">
                     <IconComponent className="h-8 w-8 text-muted-foreground" />

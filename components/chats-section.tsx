@@ -55,12 +55,17 @@ export function ChatsSection() {
 
   const { apiCall } = useApi()
 
+  const apiBaseUrl =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3001"
+      : "https://chatbot-rag-9yyy.onrender.com"
+
   // Fetch chat users from API
   const fetchChatUsers = async () => {
     try {
       setLoading(true)
 
-      const response = await apiCall("https://chatbot-rag-9yyy.onrender.com/api/users")
+      const response = await apiCall(`${apiBaseUrl}/api/users`)
 
       if (response.ok) {
         const result = await response.json()
@@ -193,7 +198,7 @@ export function ChatsSection() {
       setDeletingHistory(userId)
 
       const response = await apiCall(
-        `https://chatbot-rag-9yyy.onrender.com/api/users/${encodeURIComponent(userId)}/history`,
+        `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/history`,
         {
           method: "DELETE",
         },
@@ -563,9 +568,8 @@ export function ChatsSection() {
             {filteredHistory.map((message, index) => (
               <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                    message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900 border"
-                  }`}
+                  className={`max-w-[70%] rounded-lg px-4 py-2 ${message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900 border"
+                    }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium">{message.role === "user" ? "User" : "Assistant"}</span>

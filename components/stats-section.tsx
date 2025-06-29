@@ -114,6 +114,11 @@ export function StatsSection() {
 
   const { apiCall } = useApi()
 
+  const apiBaseUrl =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3001"
+      : "https://chatbot-rag-9yyy.onrender.com"
+
   // Fetch all required data
   const fetchAllData = async () => {
     try {
@@ -123,19 +128,19 @@ export function StatsSection() {
       const token = localStorage.getItem("token")
 
       // Fetch products
-      const productsResponse = await fetch("https://chatbot-rag-9yyy.onrender.com/api/products")
+      const productsResponse = await fetch(`${apiBaseUrl}/api/products`)
       const productsResult = await productsResponse.json()
 
       // Fetch chat users - menggunakan apiCall untuk authorization
-      const usersResponse = await apiCall("https://chatbot-rag-9yyy.onrender.com/api/users")
+      const usersResponse = await apiCall(`${apiBaseUrl}/api/users`)
       const usersResult = await usersResponse.json()
 
       // Fetch health status
-      const healthResponse = await fetch("https://chatbot-rag-9yyy.onrender.com/api/health/status")
+      const healthResponse = await fetch(`${apiBaseUrl}/api/health/status`)
       const healthResult = await healthResponse.json()
 
       // Fetch error logs
-      const errorLogsResponse = await apiCall("https://chatbot-rag-9yyy.onrender.com/api/error-logs")
+      const errorLogsResponse = await apiCall(`${apiBaseUrl}/api/error-logs`)
       const errorLogsResult = await errorLogsResponse.json()
 
       if (productsResult.success) {
@@ -180,12 +185,12 @@ export function StatsSection() {
     // Average Response Time from health data
     const avgResponseTime = healthData
       ? Math.round(
-          Object.values(healthData)
-            .filter(
-              (service): service is ServiceData => service && typeof service === "object" && "avgResponse" in service,
-            )
-            .reduce((sum, service) => sum + (service.avgResponse || 0), 0) / 4,
-        ) / 1000
+        Object.values(healthData)
+          .filter(
+            (service): service is ServiceData => service && typeof service === "object" && "avgResponse" in service,
+          )
+          .reduce((sum, service) => sum + (service.avgResponse || 0), 0) / 4,
+      ) / 1000
       : 0 // Convert to seconds
 
     return {

@@ -110,9 +110,8 @@ const ClearLogsDialog = memo(
           ? `${clearOptions.olderThan} hour${clearOptions.olderThan !== "1" ? "s" : ""}`
           : `${clearOptions.olderThan} day${clearOptions.olderThan !== "1" ? "s" : ""}`
 
-      return `This will delete logs ${
-        clearOptions.level === "ALL" ? "of all levels" : `with level ${clearOptions.level}`
-      } older than ${timeText}.`
+      return `This will delete logs ${clearOptions.level === "ALL" ? "of all levels" : `with level ${clearOptions.level}`
+        } older than ${timeText}.`
     }, [clearOptions.olderThan, clearOptions.timeUnit, clearOptions.level])
 
     return (
@@ -243,6 +242,11 @@ export function LogsSection() {
     confirmText: "",
   })
 
+  const apiBaseUrl =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3001"
+      : "https://chatbot-rag-9yyy.onrender.com"
+
   // Fetch logs from API
   const fetchLogs = useCallback(
     async (startAfter?: string, isNextPage = false) => {
@@ -257,7 +261,7 @@ export function LogsSection() {
           params.append("startAfter", startAfter)
         }
 
-        const response = await apiCall(`https://chatbot-rag-9yyy.onrender.com/api/system-logs?${params}`, {
+        const response = await apiCall(`${apiBaseUrl}/api/system-logs?${params}`, {
           method: "GET",
         })
 
@@ -470,7 +474,7 @@ export function LogsSection() {
         level: clearOptions.level,
       }
 
-      const response = await apiCall("https://chatbot-rag-9yyy.onrender.com/api/clear-logs", {
+      const response = await apiCall(`${apiBaseUrl}/api/clear-logs`, {
         method: "DELETE",
         body: JSON.stringify(requestBody),
       })
@@ -638,13 +642,12 @@ export function LogsSection() {
                   <TableCell>
                     {log.response_time ? (
                       <span
-                        className={`font-mono text-xs ${
-                          log.response_time > 1000
+                        className={`font-mono text-xs ${log.response_time > 1000
                             ? "text-red-600"
                             : log.response_time > 500
                               ? "text-yellow-600"
                               : "text-green-600"
-                        }`}
+                          }`}
                       >
                         {log.response_time}ms
                       </span>
