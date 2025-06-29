@@ -431,25 +431,25 @@ export function ProductsSection() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading products...</span>
+        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
+        <span className="ml-2 text-sm sm:text-base">Loading products...</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Products</h2>
-          <p className="text-muted-foreground">Manage your product catalog</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Products</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your product catalog</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImportModal(true)}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => setShowImportModal(true)} className="text-sm sm:text-base">
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
-          <Button onClick={() => setIsModalOpen(true)}>
+          <Button onClick={() => setIsModalOpen(true)} className="text-sm sm:text-base">
             <Plus className="h-4 w-4 mr-2" />
             Add Product
           </Button>
@@ -459,8 +459,8 @@ export function ProductsSection() {
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
-            <p className="text-red-600">{error}</p>
-            <Button variant="outline" onClick={fetchProducts} className="mt-2">
+            <p className="text-red-600 text-sm sm:text-base">{error}</p>
+            <Button variant="outline" onClick={fetchProducts} className="mt-2 text-sm sm:text-base">
               Retry
             </Button>
           </CardContent>
@@ -469,194 +469,295 @@ export function ProductsSection() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Product Management</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Product Management</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             View and manage all products in your catalog ({sortedAndFilteredProducts.length} of {products.length}{" "}
             products)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6 flex-wrap">
-            <div className="flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1 min-w-0">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search products, brands, or descriptions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 text-sm sm:text-base"
                 />
               </div>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border rounded-md min-w-[120px]"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedBrand}
-              onChange={(e) => setSelectedBrand(e.target.value)}
-              className="px-3 py-2 border rounded-md min-w-[120px]"
-            >
-              <option value="">All Brands</option>
-              {brands.map((brand) => (
-                <option key={brand} value={brand}>
-                  {brand}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 border rounded-md min-w-[120px] text-sm sm:text-base"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="px-3 py-2 border rounded-md min-w-[120px] text-sm sm:text-base"
+              >
+                <option value="">All Brands</option>
+                {brands.map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("name")}>
-                  <div className="flex items-center gap-1">Product {getSortIcon("name")}</div>
-                </TableHead>
-                <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("brand")}>
-                  <div className="flex items-center gap-1">Brand {getSortIcon("brand")}</div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-gray-50 select-none"
-                  onClick={() => handleSort("category")}
-                >
-                  <div className="flex items-center gap-1">Category {getSortIcon("category")}</div>
-                </TableHead>
-                <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("price")}>
-                  <div className="flex items-center gap-1">Price {getSortIcon("price")}</div>
-                </TableHead>
-                <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("stock")}>
-                  <div className="flex items-center gap-1">Stock {getSortIcon("stock")}</div>
-                </TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedProducts.map((product) => {
-                const stockStatus = getStockStatus(product.stock)
-                return (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        {product.images && product.images.length > 0 ? (
-                          <img
-                            src={product.images[0] || "/placeholder.svg"}
-                            alt={product.name}
-                            className="w-12 h-12 object-cover rounded border"
-                            onError={(e) => {
-                              e.currentTarget.src = "/placeholder.svg?height=48&width=48"
-                            }}
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center">
-                            <span className="text-gray-400 text-xs">No Image</span>
+          {/* Mobile Card View */}
+          <div className="block sm:hidden space-y-4">
+            {paginatedProducts.map((product) => {
+              const stockStatus = getStockStatus(product.stock)
+              return (
+                <Card key={product.id} className="p-4">
+                  <div className="flex items-start gap-3">
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0] || "/placeholder.svg"}
+                        alt={product.name}
+                        className="w-16 h-16 object-cover rounded border flex-shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg?height=64&width=64"
+                        }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center flex-shrink-0">
+                        <span className="text-gray-400 text-xs">No Image</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                          <p className="text-xs text-muted-foreground truncate">{product.brand}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
+                        </div>
+                        {product.isFeatured && <Badge variant="secondary" className="text-xs">Featured</Badge>}
+                      </div>
+                      
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {product.discount && product.discount.percent > 0 ? (
+                              <div className="flex flex-col">
+                                <span className="line-through text-xs text-gray-500">
+                                  {formatPrice(product.price)}
+                                </span>
+                                <span className="text-green-600">
+                                  {formatPrice(product.discount.priceAfterDiscount)}
+                                </span>
+                              </div>
+                            ) : (
+                              formatPrice(product.price)
+                            )}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                            <span className="text-xs">
+                              {product.rating.average.toFixed(1)} ({product.rating.count})
+                            </span>
                           </div>
-                        )}
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {product.name}
-                            {product.isFeatured && <Badge variant="secondary">Featured</Badge>}
-                          </div>
-                          <div className="text-sm text-muted-foreground truncate max-w-xs">{product.description}</div>
-                          {product.discount && product.discount.percent > 0 && (
-                            <div className="text-xs text-green-600">
-                              {product.discount.percent}% OFF
-                            </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs">Stock: {product.stock}</span>
+                          <Badge variant={stockStatus.variant} className="text-xs">{stockStatus.text}</Badge>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {product.category.slice(0, 2).map((cat, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {cat}
+                            </Badge>
+                          ))}
+                          {product.category.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{product.category.length - 2}
+                            </Badge>
                           )}
                         </div>
+                        
+                        <div className="flex gap-2 mt-3">
+                          <Button variant="outline" size="sm" onClick={() => openEditModal(product)} className="flex-1 text-xs">
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-700 text-xs"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>{product.brand}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {product.category.slice(0, 2).map((cat, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {cat}
-                          </Badge>
-                        ))}
-                        {product.category.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{product.category.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div>
-                        {product.discount && product.discount.percent > 0 ? (
-                          <>
-                            <div className="line-through text-sm text-gray-500">
-                              {formatPrice(product.price)}
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("name")}>
+                    <div className="flex items-center gap-1">Product {getSortIcon("name")}</div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("brand")}>
+                    <div className="flex items-center gap-1">Brand {getSortIcon("brand")}</div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort("category")}
+                  >
+                    <div className="flex items-center gap-1">Category {getSortIcon("category")}</div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("price")}>
+                    <div className="flex items-center gap-1">Price {getSortIcon("price")}</div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("stock")}>
+                    <div className="flex items-center gap-1">Stock {getSortIcon("stock")}</div>
+                  </TableHead>
+                  <TableHead>Rating</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedProducts.map((product) => {
+                  const stockStatus = getStockStatus(product.stock)
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {product.images && product.images.length > 0 ? (
+                            <img
+                              src={product.images[0] || "/placeholder.svg"}
+                              alt={product.name}
+                              className="w-12 h-12 object-cover rounded border flex-shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg?height=48&width=48"
+                              }}
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center flex-shrink-0">
+                              <span className="text-gray-400 text-xs">No Image</span>
                             </div>
-                            <div className="text-green-600">
-                              {formatPrice(product.discount.priceAfterDiscount)}
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-medium flex items-center gap-2">
+                              <span className="truncate">{product.name}</span>
+                              {product.isFeatured && <Badge variant="secondary">Featured</Badge>}
                             </div>
-                          </>
-                        ) : (
-                          formatPrice(product.price)
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{product.stock}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm">
-                          {product.rating.average.toFixed(1)} ({product.rating.count})
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Badge variant={stockStatus.variant}>{stockStatus.text}</Badge>
-                        <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
-                          {product.status}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEditModal(product)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                            <div className="text-sm text-muted-foreground truncate max-w-xs">{product.description}</div>
+                            {product.discount && product.discount.percent > 0 && (
+                              <div className="text-xs text-green-600">
+                                {product.discount.percent}% OFF
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{product.brand}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {product.category.slice(0, 2).map((cat, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {cat}
+                            </Badge>
+                          ))}
+                          {product.category.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{product.category.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div>
+                          {product.discount && product.discount.percent > 0 ? (
+                            <>
+                              <div className="line-through text-sm text-gray-500">
+                                {formatPrice(product.price)}
+                              </div>
+                              <div className="text-green-600">
+                                {formatPrice(product.discount.priceAfterDiscount)}
+                              </div>
+                            </>
+                          ) : (
+                            formatPrice(product.price)
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{product.stock}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span className="text-sm">
+                            {product.rating.average.toFixed(1)} ({product.rating.count})
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={stockStatus.variant}>{stockStatus.text}</Badge>
+                          <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
+                            {product.status}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openEditModal(product)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-4">
+              <div className="text-sm text-muted-foreground text-center sm:text-left">
                 Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedAndFilteredProducts.length)} of{" "}
                 {sortedAndFilteredProducts.length} products
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
+                  className="text-sm"
                 >
                   Previous
                 </Button>
@@ -680,7 +781,7 @@ export function ProductsSection() {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className="w-8 h-8 p-0"
+                        className="w-8 h-8 p-0 text-sm"
                       >
                         {pageNum}
                       </Button>
@@ -693,6 +794,7 @@ export function ProductsSection() {
                   size="sm"
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
+                  className="text-sm"
                 >
                   Next
                 </Button>
@@ -710,18 +812,19 @@ export function ProductsSection() {
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Import Products</h3>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="import-file">Select File</Label>
+                <Label htmlFor="import-file" className="text-sm sm:text-base">Select File</Label>
                 <Input
                   id="import-file"
                   type="file"
                   accept=".json,.csv"
                   onChange={handleFileImport}
                   disabled={importing}
+                  className="text-sm sm:text-base"
                 />
                 <p className="text-sm text-muted-foreground mt-1">Supported formats: JSON, CSV</p>
               </div>
@@ -748,10 +851,11 @@ export function ProductsSection() {
                   setImportFile(null)
                 }}
                 disabled={importing}
+                className="text-sm sm:text-base"
               >
                 Cancel
               </Button>
-              <Button onClick={processImportFile} disabled={!importFile || importing}>
+              <Button onClick={processImportFile} disabled={!importFile || importing} className="text-sm sm:text-base">
                 {importing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

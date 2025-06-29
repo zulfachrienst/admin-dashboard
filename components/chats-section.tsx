@@ -283,40 +283,40 @@ export function ChatsSection() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading chat data...</span>
+        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
+        <span className="ml-2 text-sm sm:text-base">Loading chat data...</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Chat Management</h2>
-          <p className="text-muted-foreground">Monitor and manage user conversations</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Chat Management</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Monitor and manage user conversations</p>
         </div>
       </div>
 
       {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
-            <p className="text-red-600">{error}</p>
-            <Button variant="outline" onClick={fetchChatUsers} className="mt-2">
+            <p className="text-red-600 text-sm sm:text-base">{error}</p>
+            <Button variant="outline" onClick={fetchChatUsers} className="mt-2 text-sm sm:text-base">
               Retry
             </Button>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
+            <div className="text-xl sm:text-2xl font-bold">{totalUsers}</div>
             <p className="text-xs text-muted-foreground">Registered chat users</p>
           </CardContent>
         </Card>
@@ -326,7 +326,7 @@ export function ChatsSection() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeUsers}</div>
+            <div className="text-xl sm:text-2xl font-bold">{activeUsers}</div>
             <p className="text-xs text-muted-foreground">Active in last 24h</p>
           </CardContent>
         </Card>
@@ -336,7 +336,7 @@ export function ChatsSection() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMessages}</div>
+            <div className="text-xl sm:text-2xl font-bold">{totalMessages}</div>
             <p className="text-xs text-muted-foreground">All time messages</p>
           </CardContent>
         </Card>
@@ -346,7 +346,7 @@ export function ChatsSection() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{avgMessages}</div>
+            <div className="text-xl sm:text-2xl font-bold">{avgMessages}</div>
             <p className="text-xs text-muted-foreground">Per user</p>
           </CardContent>
         </Card>
@@ -354,14 +354,14 @@ export function ChatsSection() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Chat Users</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Chat Users</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             View all users who have interacted with the chatbot ({sortedAndFilteredUsers.length} of {totalUsers} users)
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Search and Filter Controls */}
-          <div className="flex gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -369,14 +369,14 @@ export function ChatsSection() {
                   placeholder="Search users by ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 text-sm sm:text-base"
                 />
               </div>
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-              className="px-3 py-2 border rounded-md"
+              className="px-3 py-2 border rounded-md text-sm sm:text-base"
             >
               <option value="all">All Status</option>
               <option value="active">Active Users</option>
@@ -384,111 +384,185 @@ export function ChatsSection() {
             </select>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("userId")}>
-                  <div className="flex items-center gap-1">User ID {getSortIcon("userId")}</div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-gray-50 select-none"
-                  onClick={() => handleSort("lastInteractionTimestamp")}
-                >
-                  <div className="flex items-center gap-1">
-                    Last Interaction {getSortIcon("lastInteractionTimestamp")}
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-gray-50 select-none"
-                  onClick={() => handleSort("messageCount")}
-                >
-                  <div className="flex items-center gap-1">Messages {getSortIcon("messageCount")}</div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-gray-50 select-none"
-                  onClick={() => handleSort("isActive")}
-                >
-                  <div className="flex items-center gap-1">Status {getSortIcon("isActive")}</div>
-                </TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedUsers.map((user) => {
-                const stats = user.stats
-                return (
-                  <TableRow key={user.userId}>
-                    <TableCell className="font-medium">
-                      <div className="max-w-xs truncate" title={user.userId}>
-                        {user.userId}
+          {/* Mobile Card View */}
+          <div className="block sm:hidden space-y-4">
+            {paginatedUsers.map((user) => {
+              const stats = user.stats
+              return (
+                <Card key={user.userId} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-sm truncate" title={user.userId}>
+                          {user.userId}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">{stats.lastInteraction}</p>
                       </div>
-                    </TableCell>
-                    <TableCell>{stats.lastInteraction}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{stats.messageCount} total</div>
-                        <div className="text-muted-foreground">
-                          {stats.userMessages} user, {stats.assistantMessages} bot
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={stats.isActive ? "default" : "secondary"}>
+                      <Badge variant={stats.isActive ? "default" : "secondary"} className="text-xs">
                         {stats.isActive ? "Active" : "Inactive"}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewHistory(user.userId)}
-                          disabled={user.history.length === 0}
-                        >
-                          View History
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleExportChat(user.userId, "json")}
-                          disabled={user.history.length === 0}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteHistory(user.userId)}
-                          disabled={user.history.length === 0 || deletingHistory === user.userId}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          {deletingHistory === user.userId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Total:</span> {stats.messageCount}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                      <div>
+                        <span className="text-muted-foreground">User:</span> {stats.userMessages}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Bot:</span> {stats.assistantMessages}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewHistory(user.userId)}
+                        disabled={user.history.length === 0}
+                        className="flex-1 text-xs"
+                      >
+                        View History
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleExportChat(user.userId, "json")}
+                        disabled={user.history.length === 0}
+                        className="text-xs"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteHistory(user.userId)}
+                        disabled={user.history.length === 0 || deletingHistory === user.userId}
+                        className="text-red-600 hover:text-red-700 text-xs"
+                      >
+                        {deletingHistory === user.userId ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => handleSort("userId")}>
+                    <div className="flex items-center gap-1">User ID {getSortIcon("userId")}</div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort("lastInteractionTimestamp")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Last Interaction {getSortIcon("lastInteractionTimestamp")}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort("messageCount")}
+                  >
+                    <div className="flex items-center gap-1">Messages {getSortIcon("messageCount")}</div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleSort("isActive")}
+                  >
+                    <div className="flex items-center gap-1">Status {getSortIcon("isActive")}</div>
+                  </TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedUsers.map((user) => {
+                  const stats = user.stats
+                  return (
+                    <TableRow key={user.userId}>
+                      <TableCell className="font-medium">
+                        <div className="max-w-xs truncate" title={user.userId}>
+                          {user.userId}
+                        </div>
+                      </TableCell>
+                      <TableCell>{stats.lastInteraction}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{stats.messageCount} total</div>
+                          <div className="text-muted-foreground">
+                            {stats.userMessages} user, {stats.assistantMessages} bot
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={stats.isActive ? "default" : "secondary"}>
+                          {stats.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewHistory(user.userId)}
+                            disabled={user.history.length === 0}
+                          >
+                            View History
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleExportChat(user.userId, "json")}
+                            disabled={user.history.length === 0}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteHistory(user.userId)}
+                            disabled={user.history.length === 0 || deletingHistory === user.userId}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            {deletingHistory === user.userId ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-4">
+              <div className="text-sm text-muted-foreground text-center sm:text-left">
                 Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedAndFilteredUsers.length)} of{" "}
                 {sortedAndFilteredUsers.length} users
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
+                  className="text-sm"
                 >
                   Previous
                 </Button>
@@ -512,7 +586,7 @@ export function ChatsSection() {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className="w-8 h-8 p-0"
+                        className="w-8 h-8 p-0 text-sm"
                       >
                         {pageNum}
                       </Button>
@@ -525,6 +599,7 @@ export function ChatsSection() {
                   size="sm"
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
+                  className="text-sm"
                 >
                   Next
                 </Button>
@@ -585,17 +660,18 @@ export function ChatsSection() {
             )}
           </div>
 
-          <div className="flex gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => selectedUser && handleExportChat(selectedUser, "csv")}>
+          <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => selectedUser && handleExportChat(selectedUser, "csv")} className="text-sm">
               Export CSV
             </Button>
-            <Button variant="outline" onClick={() => selectedUser && handleExportChat(selectedUser, "json")}>
+            <Button variant="outline" onClick={() => selectedUser && handleExportChat(selectedUser, "json")} className="text-sm">
               Export JSON
             </Button>
             <Button
               variant="destructive"
               onClick={() => selectedUser && handleDeleteHistory(selectedUser)}
               disabled={deletingHistory === selectedUser}
+              className="text-sm"
             >
               {deletingHistory === selectedUser ? (
                 <>

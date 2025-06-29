@@ -71,19 +71,19 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-3 sm:p-4">
         <div className="flex items-center gap-2">
-          <Bot className="h-8 w-8 text-blue-600" />
-          <div>
-            <h2 className="text-lg font-semibold">AI Chatbot</h2>
-            <p className="text-sm text-muted-foreground">Admin Dashboard</p>
+          <Bot className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-lg font-semibold truncate">AI Chatbot</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">Admin Dashboard</p>
           </div>
         </div>
 
         {user && (
-          <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+          <div className="mt-2 sm:mt-3 p-2 bg-blue-50 rounded-lg">
             <p className="text-xs text-blue-600 font-medium">Signed in as:</p>
-            <p className="text-sm text-blue-800 truncate" title={user.email || ""}>
+            <p className="text-xs sm:text-sm text-blue-800 truncate" title={user.email || ""}>
               {user.email}
             </p>
           </div>
@@ -96,9 +96,13 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton onClick={() => onSectionChange(item.id)} isActive={activeSection === item.id}>
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                  <SidebarMenuButton 
+                    onClick={() => onSectionChange(item.id)} 
+                    isActive={activeSection === item.id}
+                    className="w-full justify-start text-sm sm:text-base"
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -107,17 +111,22 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <Button variant="outline" onClick={handleLogout} disabled={loggingOut} className="w-full justify-start">
+      <SidebarFooter className="p-3 sm:p-4">
+        <Button 
+          variant="outline" 
+          onClick={handleLogout} 
+          disabled={loggingOut} 
+          className="w-full justify-start text-sm sm:text-base"
+        >
           {loggingOut ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Signing out...
+              <Loader2 className="h-4 w-4 mr-2 animate-spin flex-shrink-0" />
+              <span className="truncate">Signing out...</span>
             </>
           ) : (
             <>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Logout</span>
             </>
           )}
         </Button>
