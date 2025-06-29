@@ -34,19 +34,21 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Bot className="h-12 w-12 text-blue-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-sm sm:max-w-md">
+        <CardHeader className="text-center space-y-2 sm:space-y-4">
+          <div className="flex justify-center mb-2 sm:mb-4">
+            <Bot className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <CardDescription>Sign in to access the AI Chatbot dashboard</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">Admin Login</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
+            Sign in to access the AI Chatbot dashboard
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -56,10 +58,11 @@ export function LoginPage() {
                 required
                 disabled={loading}
                 autoComplete="email"
+                className="text-sm sm:text-base"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -69,17 +72,18 @@ export function LoginPage() {
                 required
                 disabled={loading}
                 autoComplete="current-password"
+                className="text-sm sm:text-base"
               />
             </div>
 
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full text-sm sm:text-base" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -92,7 +96,9 @@ export function LoginPage() {
           </form>
 
           <div className="mt-4 text-center">
-            <p className="text-sm text-muted-foreground">Secure login powered by Firebase Authentication</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Secure login powered by Firebase Authentication
+            </p>
           </div>
         </CardContent>
       </Card>

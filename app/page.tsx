@@ -22,10 +22,10 @@ function DashboardContent() {
   // Show loading spinner while checking auth state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="flex items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="text-lg text-gray-600">Loading...</span>
+          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-blue-600" />
+          <span className="text-base sm:text-lg text-gray-600">Loading...</span>
         </div>
       </div>
     )
@@ -60,7 +60,9 @@ function DashboardContent() {
       <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
       <SidebarInset>
         <Header />
-        <main className="flex-1 p-6 bg-gray-50">{renderSection()}</main>
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 bg-gray-50 min-h-0 overflow-auto">
+          {renderSection()}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
